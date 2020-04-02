@@ -4,10 +4,29 @@ const ModelName = "pertandingan";
 const FindOne = async id => await Model.findOne({ _id: id });
 
 const GetAll = async (req, res, next) => {
-  const data = await Model.find().populate("refree");
+  const { player, referee } = req.query;
+  let message, data;
+  if (referee !== undefined) {
+    data = await Model.find({ referee })
+      .populate("referee")
+      .populate("players_team1")
+      .populate("players_team2");
+    message = `Semua data ${ModelName} berdasarkan wasit ${referee}`;
+  } else if (player !== undefined) {
+    data = await Model.find({
+      $or: [{ players_team1: player }, { players_team2: player }]
+    })
+      .populate("referee")
+      .populate("players_team1")
+      .populate("players_team2");
+    message = `Semua data ${ModelName} berdasarkan pemain ${player}`;
+  } else {
+    data = await Model.find().populate("referee");
+    message = `Semua data ${ModelName}`;
+  }
   res.status(200).json({
     status: true,
-    message: `Semua data ${ModelName}`,
+    message,
     data
   });
 };
@@ -15,7 +34,7 @@ const GetAll = async (req, res, next) => {
 const GetDetail = async (req, res, next) => {
   const { id } = req.params;
   const data = await Model.findOne({ _id: id })
-    .populate("refree")
+    .populate("referee")
     .populate("players_team1")
     .populate("players_team2");
   res.status(200).json({
@@ -26,12 +45,21 @@ const GetDetail = async (req, res, next) => {
 };
 
 const Create = async (req, res, next) => {
-  const { name, is_single, refree, location } = req.body;
+  const {
+    name,
+    is_single,
+    referee,
+    location,
+    players_team1,
+    players_team2
+  } = req.body;
   await Model.create({
     name,
     is_single,
-    refree,
-    location
+    referee,
+    location,
+    players_team1,
+    players_team2
   });
   res.status(200).json({
     status: true,
@@ -44,24 +72,44 @@ const Update = async (req, res, next) => {
   const {
     name,
     is_single,
-    refree,
+    referee,
     players_team1,
     players_team2,
-    sets,
     location
   } = req.body;
   let data = await FindOne(id);
   data.name = name;
   data.is_single = is_single;
-  data.refree = refree;
+  data.referee = referee;
   data.players_team1 = players_team1;
   data.players_team2 = players_team2;
-  data.sets = sets;
   data.location = location;
   await data.save();
   res.status(200).json({
     status: true,
-    message: `Berhasil mengubah data ${ModelName} ${data.nickname}`
+    message: `Berhasil mengubah data ${ModelName} ${data.name}`
+  });
+};
+
+const SaveSets = async () => {
+  const { id } = req.params;
+  const { set, result } = req.body;
+  let data = await FindOne(id);
+  switch (set) {
+    case 1:
+      data.set1 = result;
+      break;
+    case 2:
+      data.set2 = result;
+      break;
+    default:
+      data.set3 = result;
+      break;
+  }
+  await data.save();
+  res.status(200).json({
+    status: true,
+    message: `Berhasil menyimpan Set ${set} pada pertandingan ${data.name}`
   });
 };
 
@@ -71,8 +119,14 @@ const Delete = async (req, res, next) => {
   await data.remove();
   res.status(200).json({
     status: true,
-    message: `Berhasil menghapus data ${ModelName} ${data.nickname}`
+    message: `Berhasil menghapus data ${ModelName} ${data.name}`
   });
 };
 
-module.exports = { GetAll, GetDetail, Create, Update, Delete };
+module.exports = {
+  GetAll,
+  GetDetail,
+  Create,
+  Update,
+  Delete
+};

@@ -15,7 +15,7 @@ const MatchScheme = new Schema(
       type: Boolean,
       required: true
     },
-    refree: {
+    referee: {
       type: Schema.Types.ObjectId,
       ref: "Player",
       required: true
@@ -28,15 +28,9 @@ const MatchScheme = new Schema(
       type: [{ type: Schema.Types.ObjectId, ref: "Player" }],
       required: true
     },
-    sets: {
-      type: [
-        {
-          time: { type: String },
-          score_team1: { type: Number },
-          score_team2: { type: Number }
-        }
-      ]
-    }
+    set1: {},
+    set2: {},
+    set3: {}
   },
   {
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" }
